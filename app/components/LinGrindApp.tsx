@@ -374,7 +374,7 @@ export default function LinGrindApp() {
   const [statsRefresh, setStatsRefresh]         = useState(0)
 
   const audioRef       = useRef<HTMLAudioElement | null>(null)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<InstanceType<typeof window.SpeechRecognition> | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { speak, cancel: cancelSpeech } = useSpeechSynthesis()
 
@@ -555,15 +555,16 @@ export default function LinGrindApp() {
 
       recognition.onstart = () => setIsListening(true)
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
+      recognition.onresult = (event: Event) => {
+        const e = event as SpeechRecognitionEvent
         if (!isButtonHeldRef.current) return
         let acc = ''
-        for (let i = 0; i < event.results.length; i++) {
-          let best = event.results[i][0].transcript
-          let bestConf = event.results[i][0].confidence || 0
-          for (let j = 1; j < event.results[i].length; j++) {
-            const c = event.results[i][j].confidence || 0
-            if (c > bestConf) { best = event.results[i][j].transcript; bestConf = c }
+        for (let i = 0; i < e.results.length; i++) {
+          let best = e.results[i][0].transcript
+          let bestConf = e.results[i][0].confidence || 0
+          for (let j = 1; j < e.results[i].length; j++) {
+            const c = e.results[i][j].confidence || 0
+            if (c > bestConf) { best = e.results[i][j].transcript; bestConf = c }
           }
           acc += best + ' '
         }
@@ -572,9 +573,10 @@ export default function LinGrindApp() {
         setLiveTranscript(text)
       }
 
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === 'no-speech') return
-        if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+      recognition.onerror = (event: Event) => {
+        const e = event as SpeechRecognitionErrorEvent
+        if (e.error === 'no-speech') return
+        if (e.error === 'not-allowed' || e.error === 'permission-denied') {
           setSpeechError('Microphone access denied. Allow microphone in browser settings.')
           isButtonHeldRef.current = false; setIsListening(false)
         }
